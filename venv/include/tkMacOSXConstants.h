@@ -6,7 +6,7 @@
  *      operating system.  (Each new OS release seems to come with a new
  *      naming convention for the same old constants.)
  *
- * Copyright (c) 2017 Marc Culler
+ * Copyright © 2017 Marc Culler
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -79,11 +79,13 @@ typedef NSInteger NSModalResponse;
 #define NSCursorUpdate NSEventTypeCursorUpdate
 #define NSTexturedBackgroundWindowMask NSWindowStyleMaskTexturedBackground
 #define NSCompositeCopy NSCompositingOperationCopy
+#define NSCompositeSourceOver NSCompositingOperationSourceOver
+#define NSCompositeSourceAtop NSCompositingOperationSourceAtop
+#define NSCompositeDestinationIn NSCompositingOperationDestinationIn
 #define NSWarningAlertStyle NSAlertStyleWarning
 #define NSInformationalAlertStyle NSAlertStyleInformational
 #define NSCriticalAlertStyle NSAlertStyleCritical
 #define NSCenterTextAlignment NSTextAlignmentCenter
-#define NSAnyEventMask NSEventMaskAny
 #define NSApplicationDefinedMask NSEventMaskApplicationDefined
 #define NSUtilityWindowMask NSWindowStyleMaskUtilityWindow
 #define NSNonactivatingPanelMask NSWindowStyleMaskNonactivatingPanel
@@ -96,6 +98,11 @@ typedef NSInteger NSModalResponse;
 #define NSMiniaturizableWindowMask NSWindowStyleMaskMiniaturizable
 #define NSBorderlessWindowMask NSWindowStyleMaskBorderless
 #define NSFullScreenWindowMask NSWindowStyleMaskFullScreen
+#define NSAlphaFirstBitmapFormat NSBitmapFormatAlphaFirst
+#define NSAnyEventMask NSEventMaskAny
+#define NSLeftMouseDownMask NSEventMaskLeftMouseDown
+#define NSMouseMovedMask NSEventMaskMouseMoved
+#define NSLeftMouseDraggedMask NSEventMaskLeftMouseDragged
 #endif
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101400

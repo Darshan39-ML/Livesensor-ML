@@ -5,9 +5,9 @@
  *	information that may be configuration-dependent, such as
  *	#includes for system include files and a few other things.
  *
- * Copyright (c) 1994-1996 Sun Microsystems, Inc.
- * Copyright 2001-2009, Apple Inc.
- * Copyright (c) 2005-2009 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 1994-1996 Sun Microsystems, Inc.
+ * Copyright © 2001-2009 Apple Inc.
+ * Copyright © 2005-2009 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -35,17 +35,11 @@
 #ifndef _TCL
 #   include <tcl.h>
 #endif
-#if TIME_WITH_SYS_TIME
-#   include <sys/time.h>
-#   include <time.h>
-#else
-#   if HAVE_SYS_TIME_H
+#ifdef HAVE_SYS_TIME_H
 #	include <sys/time.h>
-#   else
-#	include <time.h>
-#   endif
 #endif
-#if HAVE_INTTYPES_H
+#include <time.h>
+#ifdef HAVE_INTTYPES_H
 #    include <inttypes.h>
 #endif
 #include <unistd.h>
@@ -135,11 +129,11 @@
 #undef XGrabServer
 #define XGrabServer(display) (0)
 #undef XNoOp
-#define XNoOp(display) (display->request++,0)
+#define XNoOp(display) (LastKnownRequestProcessed(display)++,0)
 #undef XUngrabServer
 #define XUngrabServer(display) (0)
 #undef XSynchronize
-#define XSynchronize(display, onoff) (display->request++,NULL)
+#define XSynchronize(display, onoff) (LastKnownRequestProcessed(display)++,NULL)
 #undef XVisualIDFromVisual
 #define XVisualIDFromVisual(visual) (visual->visualid)
 
@@ -168,7 +162,7 @@
  */
 
 #define TkpPrintWindowId(buf,w) \
-	sprintf((buf), "0x%lx", (unsigned long) (w))
+	snprintf((buf), TCL_INTEGER_SPACE, "0x%lx", (unsigned long) (w))
 
 /*
  * Turn off Tk double-buffering as Aqua windows are already double-buffered.
@@ -197,14 +191,6 @@ MODULE_SCOPE int TkpPutRGBAImage(
 MODULE_SCOPE unsigned long TkMacOSXRGBPixel(unsigned long red, unsigned long green,
 					    unsigned long blue);
 #define TkpGetPixel(p) (TkMacOSXRGBPixel(p->red >> 8, p->green >> 8, p->blue >> 8))
-
-/*
- * Used by tkWindow.c
- */
-
-MODULE_SCOPE void TkMacOSXHandleMapOrUnmap(Tk_Window tkwin, XEvent *event);
-
-#define TkpHandleMapOrUnmap(tkwin, event)  TkMacOSXHandleMapOrUnmap(tkwin, event)
 
 /*
  * Used by tkAppInit

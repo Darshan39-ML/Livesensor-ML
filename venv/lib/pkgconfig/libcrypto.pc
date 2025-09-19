@@ -1,4 +1,4 @@
-prefix=/Users/myhome/Downloads/sensorlive/venv
+prefix=/home/darshan39/Downloads/new/venv
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
@@ -7,7 +7,7 @@ modulesdir=${libdir}/ossl-modules
 
 Name: OpenSSL-libcrypto
 Description: OpenSSL cryptography library
-Version: 3.0.13
+Version: 3.0.17
 Libs: -L${libdir} -lcrypto
-Libs.private:  
+Libs.private: -ldl -pthread 
 Cflags: -I${includedir}

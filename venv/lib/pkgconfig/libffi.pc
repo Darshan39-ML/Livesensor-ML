@@ -1,8 +1,8 @@
-prefix=/Users/myhome/Downloads/sensorlive/venv
+prefix=/home/darshan39/Downloads/new/venv
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 toolexeclibdir=${libdir}
-includedir=/Users/myhome/Downloads/sensorlive/venv/include
+includedir=/home/darshan39/Downloads/new/venv/include
 
 Name: libffi
 Description: Library supporting Foreign Function Interfaces

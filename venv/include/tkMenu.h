@@ -4,7 +4,7 @@
  *	Declarations shared among all of the files that implement menu
  *	widgets.
  *
- * Copyright (c) 1996-1998 by Sun Microsystems, Inc.
+ * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -517,7 +517,7 @@ MODULE_SCOPE int	TkPostCommand(TkMenu *menuPtr);
 MODULE_SCOPE int	TkPostSubmenu(Tcl_Interp *interp, TkMenu *menuPtr,
 			    TkMenuEntry *mePtr);
 MODULE_SCOPE int	TkPostTearoffMenu(Tcl_Interp *interp, TkMenu *menuPtr,
-					   int x, int y);
+			    int x, int y);
 MODULE_SCOPE int	TkPreprocessMenu(TkMenu *menuPtr);
 MODULE_SCOPE void	TkRecomputeMenu(TkMenu *menuPtr);
 
@@ -542,7 +542,7 @@ MODULE_SCOPE int	TkpNewMenu(TkMenu *menuPtr);
 MODULE_SCOPE int	TkpPostMenu(Tcl_Interp *interp, TkMenu *menuPtr,
 			    int x, int y, int index);
 MODULE_SCOPE int	TkpPostTearoffMenu(Tcl_Interp *interp, TkMenu *menuPtr,
-					   int x, int y, int index);
+			    int x, int y, int index);
 MODULE_SCOPE void	TkpSetWindowMenuBar(Tk_Window tkwin, TkMenu *menuPtr);
 
 #endif /* _TKMENU */

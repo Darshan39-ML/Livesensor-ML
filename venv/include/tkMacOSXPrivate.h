@@ -3,9 +3,9 @@
  *
  *	Macros and declarations that are purely internal & private to TkAqua.
  *
- * Copyright (c) 2005-2009 Daniel A. Steffen <das@users.sourceforge.net>
- * Copyright (c) 2008-2009 Apple Inc.
- * Copyright (c) 2020 Marc Culler
+ * Copyright © 2005-2009 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2008-2009 Apple Inc.
+ * Copyright © 2020 Marc Culler
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -28,6 +28,9 @@
 #import <ApplicationServices/ApplicationServices.h>
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+#endif
 #ifndef NO_CARBON_H
 #import <Carbon/Carbon.h>
 #endif
@@ -121,9 +124,10 @@
  * Macro abstracting use of TkMacOSXGetNamedSymbol to init named symbols.
  */
 
+#define UNINITIALISED_SYMBOL	((void*)(-1L))
 #define TkMacOSXInitNamedSymbol(module, ret, symbol, ...) \
-    static ret (* symbol)(__VA_ARGS__) = (void*)(-1L); \
-    if (symbol == (void*)(-1L)) { \
+    static ret (* symbol)(__VA_ARGS__) = UNINITIALISED_SYMBOL; \
+    if (symbol == UNINITIALISED_SYMBOL) { \
 	symbol = TkMacOSXGetNamedSymbol(STRINGIFY(module), \
 		STRINGIFY(symbol)); \
     }
@@ -207,30 +211,14 @@ typedef struct TkMacOSXDrawingContext {
 } TkMacOSXDrawingContext;
 
 /*
- * Variables internal to TkAqua.
- */
-
-MODULE_SCOPE long tkMacOSXMacOSXVersion;
-
-/*
  * Prototypes for TkMacOSXRegion.c.
  */
 
 MODULE_SCOPE HIShapeRef	TkMacOSXGetNativeRegion(TkRegion r);
 MODULE_SCOPE void	TkMacOSXSetWithNativeRegion(TkRegion r,
 			    HIShapeRef rgn);
-MODULE_SCOPE HIShapeRef	TkMacOSXHIShapeCreateEmpty(void);
-MODULE_SCOPE HIMutableShapeRef TkMacOSXHIShapeCreateMutableWithRect(
-			    const CGRect *inRect);
-MODULE_SCOPE OSStatus	TkMacOSXHIShapeSetWithShape(
-			    HIMutableShapeRef inDestShape,
-			    HIShapeRef inSrcShape);
 MODULE_SCOPE OSStatus	TkMacOSHIShapeDifferenceWithRect(
 			    HIMutableShapeRef inShape, const CGRect *inRect);
-MODULE_SCOPE OSStatus	TkMacOSHIShapeUnionWithRect(HIMutableShapeRef inShape,
-			    const CGRect *inRect);
-MODULE_SCOPE OSStatus	TkMacOSHIShapeUnion(HIShapeRef inShape1,
-			    HIShapeRef inShape2, HIMutableShapeRef outResult);
 MODULE_SCOPE int	TkMacOSXCountRectsInRegion(HIShapeRef shape);
 MODULE_SCOPE void       TkMacOSXPrintRectsInRegion(HIShapeRef shape);
 /*
@@ -258,14 +246,14 @@ MODULE_SCOPE void	TkMacOSXRestoreDrawingContext(
 			    TkMacOSXDrawingContext *dcPtr);
 MODULE_SCOPE void	TkMacOSXSetColorInContext(GC gc, unsigned long pixel,
 			    CGContextRef context);
-#define TkMacOSXGetTkWindow(window) (TkWindow *)Tk_MacOSXGetTkWindow(window)
-#define TkMacOSXGetNSWindowForDrawable(drawable) ((NSWindow*)TkMacOSXDrawable(drawable))
-#define TkMacOSXGetNSViewForDrawable(macWin) (NSView *)Tk_MacOSXGetNSViewForDrawable((Drawable)(macWin))
+#define TkMacOSXGetTkWindow(window) ((TkWindow *)Tk_MacOSXGetTkWindow(window))
+#define TkMacOSXGetNSWindowForDrawable(drawable) ((NSWindow *)TkMacOSXDrawable(drawable))
+#define TkMacOSXGetNSViewForDrawable(macWin) ((NSView *)Tk_MacOSXGetNSViewForDrawable((Drawable)(macWin)))
+MODULE_SCOPE CGContextRef TkMacOSXGetCGContextForDrawable(Drawable drawable);
 MODULE_SCOPE void	TkMacOSXWinCGBounds(TkWindow *winPtr, CGRect *bounds);
 MODULE_SCOPE HIShapeRef	TkMacOSXGetClipRgn(Drawable drawable);
 MODULE_SCOPE void	TkMacOSXInvalidateViewRegion(NSView *view,
 			    HIShapeRef rgn);
-MODULE_SCOPE CGContextRef TkMacOSXGetCGContextForDrawable(Drawable drawable);
 MODULE_SCOPE NSImage*	TkMacOSXGetNSImageFromTkImage(Display *display,
 			    Tk_Image image, int width, int height);
 MODULE_SCOPE NSImage*	TkMacOSXGetNSImageFromBitmap(Display *display,
@@ -277,23 +265,20 @@ MODULE_SCOPE NSModalSession TkMacOSXGetModalSession(void);
 MODULE_SCOPE void	TkMacOSXSelDeadWindow(TkWindow *winPtr);
 MODULE_SCOPE void	TkMacOSXApplyWindowAttributes(TkWindow *winPtr,
 			    NSWindow *macWindow);
-MODULE_SCOPE int	TkMacOSXStandardAboutPanelObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TkMacOSXIconBitmapObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_ObjCmdProc TkMacOSXStandardAboutPanelObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TkMacOSXIconBitmapObjCmd;
 MODULE_SCOPE void       TkMacOSXDrawSolidBorder(Tk_Window tkwin, GC gc,
 			    int inset, int thickness);
 MODULE_SCOPE int 	TkMacOSXServices_Init(Tcl_Interp *interp);
-MODULE_SCOPE int	TkMacOSXRegisterServiceWidgetObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_ObjCmdProc TkMacOSXRegisterServiceWidgetObjCmd;
 MODULE_SCOPE unsigned   TkMacOSXAddVirtual(unsigned int keycode);
 MODULE_SCOPE void       TkMacOSXWinNSBounds(TkWindow *winPtr, NSView *view,
 					    NSRect *bounds);
 MODULE_SCOPE Bool       TkMacOSXInDarkMode(Tk_Window tkwin);
-MODULE_SCOPE void	TkMacOSXDrawAllViews(ClientData clientData);
+MODULE_SCOPE void	TkMacOSXDrawAllViews(void *clientData);
 MODULE_SCOPE unsigned long TkMacOSXClearPixel(void);
+MODULE_SCOPE NSString*  TkMacOSXOSTypeToUTI(OSType ostype);
+MODULE_SCOPE NSImage*   TkMacOSXIconForFileType(NSString *filetype);
 
 #pragma mark Private Objective-C Classes
 
@@ -332,6 +317,11 @@ VISIBILITY_HIDDEN
     int _macOSVersion;  /* 10000 * major + 100*minor */
     Bool _isDrawing;
     Bool _needsToDraw;
+    Bool _tkLiveResizeEnded;
+    TkWindow *_tkPointerWindow;
+    TkWindow *_tkEventTarget;
+    TkWindow *_tkDragTarget;
+    unsigned int _tkButtonState;
 #endif
 
 }
@@ -339,6 +329,16 @@ VISIBILITY_HIDDEN
 @property int macOSVersion;
 @property Bool isDrawing;
 @property Bool needsToDraw;
+@property Bool tkLiveResizeEnded;
+
+/*
+ * Persistent state variables used by processMouseEvent.
+ */
+
+@property(nonatomic) TkWindow *tkPointerWindow;
+@property(nonatomic) TkWindow *tkEventTarget;
+@property(nonatomic) TkWindow *tkDragTarget;
+@property unsigned int tkButtonState;
 
 @end
 @interface TKApplication(TKInit)
@@ -413,6 +413,7 @@ VISIBILITY_HIDDEN
     NSString *privateWorkingText;
     Bool _tkNeedsDisplay;
     NSRect _tkDirtyRect;
+    NSTrackingArea *trackingArea;
 }
 @property Bool tkNeedsDisplay;
 @property NSRect tkDirtyRect;
@@ -440,11 +441,9 @@ VISIBILITY_HIDDEN
 {
 #ifdef __i386__
     /* The Objective C runtime used on i386 requires this. */
-    Bool _mouseInResizeArea;
     Window _tkWindow;
 #endif
 }
-@property Bool mouseInResizeArea;
 @property Window tkWindow;
 @end
 

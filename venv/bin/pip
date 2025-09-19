@@ -1,5 +1,4 @@
-#!/Users/myhome/Downloads/sensorlive/venv/bin/python
-
+#!/home/darshan39/Downloads/new/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys
