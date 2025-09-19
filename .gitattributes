@@ -1,0 +1,2 @@
+archive/aps_failure_training_set_processed_8bit.csv filter=lfs diff=lfs merge=lfs -text
+*.npy filter=lfs diff=lfs merge=lfs -text
