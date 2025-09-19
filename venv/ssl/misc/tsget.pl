@@ -1,4 +1,4 @@
-#!/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_86jur6dhmb/croot/openssl_1706908569501/_build_env/bin/perl
+#!/croot/openssl_1753176348759/_build_env/bin/perl
 # Copyright 2002-2021 The OpenSSL Project Authors. All Rights Reserved.
 # Copyright (c) 2002 The OpenTSA Project. All rights reserved.
 #
@@ -47,7 +47,7 @@ sub create_curl {
     $curl->setopt(CURLOPT_VERBOSE, 1) if $options{d};
     $curl->setopt(CURLOPT_FAILONERROR, 1);
     $curl->setopt(CURLOPT_USERAGENT,
-        "OpenTSA tsget.pl/openssl-3.0.13");
+        "OpenTSA tsget.pl/openssl-3.0.17");
 
     # Options for POST method.
     $curl->setopt(CURLOPT_UPLOAD, 1);

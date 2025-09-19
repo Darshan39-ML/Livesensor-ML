@@ -50,8 +50,8 @@ extern "C" {
 #endif
 
 /* Specify which architecture libffi is configured for. */
-#ifndef AARCH64
-#define AARCH64
+#ifndef X86_64
+#define X86_64
 #endif
 
 /* ---- System configuration information --------------------------------- */
@@ -61,7 +61,7 @@ extern "C" {
 #define FFI_TYPE_INT        1
 #define FFI_TYPE_FLOAT      2
 #define FFI_TYPE_DOUBLE     3
-#if 0
+#if 1
 #define FFI_TYPE_LONGDOUBLE 4
 #else
 #define FFI_TYPE_LONGDOUBLE FFI_TYPE_DOUBLE
@@ -223,7 +223,7 @@ FFI_EXTERN ffi_type ffi_type_float;
 FFI_EXTERN ffi_type ffi_type_double;
 FFI_EXTERN ffi_type ffi_type_pointer;
 
-#if 0
+#if 1
 FFI_EXTERN ffi_type ffi_type_longdouble;
 #else
 #define ffi_type_longdouble ffi_type_double
@@ -232,7 +232,7 @@ FFI_EXTERN ffi_type ffi_type_longdouble;
 #ifdef FFI_TARGET_HAS_COMPLEX_TYPE
 FFI_EXTERN ffi_type ffi_type_complex_float;
 FFI_EXTERN ffi_type ffi_type_complex_double;
-#if 0
+#if 1
 FFI_EXTERN ffi_type ffi_type_complex_longdouble;
 #else
 #define ffi_type_complex_longdouble ffi_type_complex_double
@@ -333,7 +333,7 @@ size_t ffi_java_raw_size (ffi_cif *cif) __attribute__((deprecated));
 __declspec(align(8))
 #endif
 typedef struct {
-#if 1
+#if 0
   void *trampoline_table;
   void *trampoline_table_entry;
 #else
@@ -394,7 +394,7 @@ ffi_prep_closure_loc (ffi_closure*,
 # pragma pack 8
 #endif
 typedef struct {
-#if 1
+#if 0
   void *trampoline_table;
   void *trampoline_table_entry;
 #else
@@ -419,7 +419,7 @@ typedef struct {
 } ffi_raw_closure;
 
 typedef struct {
-#if 1
+#if 0
   void *trampoline_table;
   void *trampoline_table_entry;
 #else

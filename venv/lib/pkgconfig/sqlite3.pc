@@ -1,13 +1,13 @@
 # Package Information for pkg-config
 
-prefix=/Users/myhome/Downloads/sensorlive/venv
+prefix=/home/darshan39/Downloads/new/venv
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 
 Name: SQLite
 Description: SQL database engine
-Version: 3.41.2
+Version: 3.50.2
 Libs: -L${libdir} -lsqlite3
-Libs.private: -lz 
+Libs.private: -lm -lz 
 Cflags: -I${includedir}

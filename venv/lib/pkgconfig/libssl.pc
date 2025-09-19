@@ -1,11 +1,11 @@
-prefix=/Users/myhome/Downloads/sensorlive/venv
+prefix=/home/darshan39/Downloads/new/venv
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 
 Name: OpenSSL-libssl
 Description: Secure Sockets Layer and cryptography libraries
-Version: 3.0.13
+Version: 3.0.17
 Requires.private: libcrypto
 Libs: -L${libdir} -lssl
 Cflags: -I${includedir}

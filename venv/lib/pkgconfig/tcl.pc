@@ -1,15 +1,16 @@
 # tcl pkg-config source file
 
-prefix=/Users/myhome/Downloads/sensorlive/venv
-exec_prefix=/Users/myhome/Downloads/sensorlive/venv
-libdir=/Users/myhome/Downloads/sensorlive/venv/lib
+prefix=/home/darshan39/Downloads/new/venv
+exec_prefix=/home/darshan39/Downloads/new/venv
+libdir=/home/darshan39/Downloads/new/venv/lib
 includedir=${prefix}/include
+libfile=libtcl8.6.so
 
 Name: Tool Command Language
 Description: Tcl is a powerful, easy-to-learn dynamic programming language, suitable for a wide range of uses.
-URL: https://www.tcl-tk.org/
-Version: 8.6.12
+URL: https://www.tcl-lang.org/
+Version: 8.6.15
 Requires.private: zlib >= 1.2.3
 Libs: -L${libdir} -ltcl8.6 -ltclstub8.6
-Libs.private:  -lz  -lpthread -framework CoreFoundation 
+Libs.private: -ldl -lz  -lpthread -lm
 Cflags: -I${includedir}

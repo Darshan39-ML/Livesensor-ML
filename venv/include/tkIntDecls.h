@@ -6,7 +6,7 @@
  *	interfaces are not guaranteed to remain the same between
  *	versions.  Use at your own risk.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -558,6 +558,8 @@ EXTERN void		TkpRedrawWidget(Tk_Window tkwin);
 /* 186 */
 EXTERN int		TkpWillDrawWidget(Tk_Window tkwin);
 #endif /* MACOSX */
+/* 187 */
+EXTERN void		TkUnusedStubEntry(void);
 
 typedef struct TkIntStubs {
     int magic;
@@ -691,7 +693,9 @@ typedef struct TkIntStubs {
     void (*reserved121)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TK /* AQUA */
+# if TCL_MAJOR_VERSION < 9
     void (*reserved121)(void); /* Dummy entry for stubs table backwards compatibility */
+# endif /* TCL_MAJOR_VERSION < 9 */
     Pixmap (*tkpCreateNativeBitmap) (Display *display, const void *source); /* 121 */
 #endif /* AQUA */
 #if !(defined(_WIN32) || defined(MAC_OSX_TK)) /* X11 */
@@ -701,7 +705,9 @@ typedef struct TkIntStubs {
     void (*reserved122)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TK /* AQUA */
+# if TCL_MAJOR_VERSION < 9
     void (*reserved122)(void); /* Dummy entry for stubs table backwards compatibility */
+# endif /* TCL_MAJOR_VERSION < 9 */
     void (*tkpDefineNativeBitmaps) (void); /* 122 */
 #endif /* AQUA */
     void (*reserved123)(void);
@@ -712,7 +718,9 @@ typedef struct TkIntStubs {
     void (*reserved124)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TK /* AQUA */
+# if TCL_MAJOR_VERSION < 9
     void (*reserved124)(void); /* Dummy entry for stubs table backwards compatibility */
+# endif /* TCL_MAJOR_VERSION < 9 */
     Pixmap (*tkpGetNativeAppBitmap) (Display *display, const char *name, int *width, int *height); /* 124 */
 #endif /* AQUA */
     void (*reserved125)(void);
@@ -793,6 +801,7 @@ typedef struct TkIntStubs {
 #ifdef MAC_OSX_TCL /* MACOSX */
     int (*tkpWillDrawWidget) (Tk_Window tkwin); /* 186 */
 #endif /* MACOSX */
+    void (*tkUnusedStubEntry) (void); /* 187 */
 } TkIntStubs;
 
 extern const TkIntStubs *tkIntStubsPtr;
@@ -1173,6 +1182,8 @@ extern const TkIntStubs *tkIntStubsPtr;
 #define TkpWillDrawWidget \
 	(tkIntStubsPtr->tkpWillDrawWidget) /* 186 */
 #endif /* MACOSX */
+#define TkUnusedStubEntry \
+	(tkIntStubsPtr->tkUnusedStubEntry) /* 187 */
 
 #endif /* defined(USE_TK_STUBS) */
 
@@ -1223,6 +1234,8 @@ extern const TkIntStubs *tkIntStubsPtr;
 #   define TkpWillDrawWidget(w) 0
 #   define TkpRedrawWidget(w)
 #endif
+
+#undef TkUnusedStubEntry
 
 #endif /* _TKINTDECLS */
 

@@ -1,20 +1,16 @@
-#
+# SPDX-License-Identifier: 0BSD
 # Author: Lasse Collin
-#
-# This file has been put into the public domain.
-# You can do whatever you want with this file.
-#
 
-prefix=/Users/myhome/Downloads/sensorlive/venv
-exec_prefix=/Users/myhome/Downloads/sensorlive/venv
-libdir=/Users/myhome/Downloads/sensorlive/venv/lib
-includedir=/Users/myhome/Downloads/sensorlive/venv/include
+prefix=/home/darshan39/Downloads/new/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
 
 Name: liblzma
 Description: General purpose data compression library
-URL: https://xz.tukaani.org/xz-utils/
-Version: 5.4.6
+URL: https://tukaani.org/xz/
+Version: 5.6.4
 Cflags: -I${includedir}
 Cflags.private: -DLZMA_API_STATIC
 Libs: -L${libdir} -llzma
-Libs.private: -pthread -lpthread
+Libs.private: -pthread 
