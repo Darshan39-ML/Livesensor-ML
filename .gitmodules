@@ -1,0 +1,3 @@
+[submodule "Livesensor-ML"]
+	path = Livesensor-ML
+	url = https://github.com/Darshan39-ML/Livesensor-ML.git
