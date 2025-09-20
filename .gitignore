@@ -2,6 +2,8 @@
 __pycache__/
 *.py[codz]
 *$py.class
+# Environment variables file (do not commit secrets)
+.env
 
 # C extensions
 *.so
