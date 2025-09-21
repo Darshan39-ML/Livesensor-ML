@@ -1,4 +1,5 @@
 import sys
+import os 
 
 
 def error_message_detail(error, error_detail:sys):
