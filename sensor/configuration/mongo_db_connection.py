@@ -22,7 +22,7 @@ class MongoDBClient:
         try:
             if MongoDBClient.client is None:
                 # Read the connection URL from env; support fallback keys if needed
-                mongo_db_url = os.getenv(MONGODB_URL_KEY) or os.getenv('MONGODB_URI') or os.getenv('MONGODB_URL')
+                mongo_db_url = os.getenv(MONGODB_URL_KEY) or os.getenv('MONGODB_URI') or os.getenv('MONGODB_URL') or os.getenv('MONGODB_URI1')
 
                 if not mongo_db_url:
                     raise EnvironmentError(
