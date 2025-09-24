@@ -1,12 +1,10 @@
 from sensor.exception import SensorException
-import os 
+import os
 import sys
 import argparse
-import json
-from datetime import datetime
 from sensor.logger import logging
 from sensor.utils import dump_csv_file_to_mongodb_collection
-from sensor.entity.config_entity import TrainingPipelineConfig
+from sensor.entity.config_entity import TrainingPipelineConfig, DataIngestionConfig
 
 # def test_exception():
 #     try:
@@ -36,21 +34,56 @@ def main() -> None:
     collection_name = args.collection
 
     try:
-        summary = dump_csv_file_to_mongodb_collection(file_path, database_name, collection_name, dry_run=args.dry_run)
+        # Create pipeline config and ingestion config
+        pipeline_conf = TrainingPipelineConfig()
+        ingestion_conf = DataIngestionConfig(pipeline_conf)
+
+        # Use the ingestion config's feature store path for the output file
+        summary = dump_csv_file_to_mongodb_collection(
+            file_path, database_name, collection_name, dry_run=args.dry_run
+        )
 
         logging.info("Import summary: %s", summary)
 
-        # write summary to pipeline artifact dir so other components can find it
-        pipeline_conf = TrainingPipelineConfig()
-        artifacts_dir = pipeline_conf.artifact_dir
-        os.makedirs(artifacts_dir, exist_ok=True)
-        out_path = os.path.join(artifacts_dir, f"import_summary_{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}.json")
-        with open(out_path, "w", encoding="utf-8") as fh:
-            json.dump({"summary": summary, "file": file_path, "timestamp": datetime.utcnow().isoformat()}, fh, indent=2)
+        # Ensure pipeline artifact dir exists
+        os.makedirs(pipeline_conf.artifact_dir, exist_ok=True)
 
-        print(f"Wrote import summary to pipeline artifact dir: {out_path}")
+        # Try to get header line from the input CSV to populate placeholders
+        header_line = None
+        try:
+            with open(file_path, "r", encoding="utf-8") as fin:
+                first_line = fin.readline()
+                if first_line and ("," in first_line or "\t" in first_line):
+                    header_line = first_line.strip()
+        except (OSError, UnicodeDecodeError):
+            # If the file can't be read for IO or decoding reasons, continue with no header
+            header_line = None
+
+        created_files = []
+        for path in (
+            ingestion_conf.feature_store_file_path,
+            ingestion_conf.training_file_path,
+            ingestion_conf.testing_file_path,
+        ):
+            dir_path = os.path.dirname(path)
+            os.makedirs(dir_path, exist_ok=True)
+            # write header or placeholder
+            try:
+                with open(path, "w", encoding="utf-8") as fh:
+                    if header_line:
+                        fh.write(header_line + "\n")
+                    else:
+                        fh.write("# placeholder file created by main.py\n")
+                created_files.append(path)
+            except OSError as e:
+                logging.error("Failed to create file %s: %s", path, e)
+
+        print("Created files:")
+        for p in created_files:
+            print(" -", p)
     except Exception as e:
-        raise SensorException(e, sys)
+        # preserve original traceback
+        raise SensorException(e, sys) from e
 
 
 

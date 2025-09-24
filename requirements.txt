@@ -1,2 +1,8 @@
 pymongo[srv]==4.2.0
+pandas
+numPy
+scikit-learn
+python-dotenv
+pyYAML
+dill
 -e .  #editable mode
