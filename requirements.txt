@@ -1,8 +1,10 @@
 pymongo[srv]==4.2.0
 pandas
-numPy
+numpy
 scikit-learn
+pymongo
 python-dotenv
-pyYAML
+PyYAML
 dill
--e .  #editable mode
+
+-e .   #editable mode 

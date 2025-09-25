@@ -1,235 +1,159 @@
-
-import os
-import sys
-import shutil
-import numbers
-
-import pandas as pd
-from scipy.stats import ks_2samp
+from distutils import dir_util
 
 from sensor.constant.training_pipeline import SCHEMA_FILE_PATH
+
 from sensor.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact
+
 from sensor.entity.config_entity import DataValidationConfig
 from sensor.exception import SensorException
 from sensor.logger import logging
 from sensor.utils.main_utils import read_yaml_file, write_yaml_file
+from scipy.stats import ks_2samp
+import pandas as pd
+import os,sys
+
 
 
 class DataValidation:
-    """Perform data validation (schema and drift) and produce a DataValidationArtifact.
 
-    This implementation is intentionally conservative: it copies the ingestion
-    train/test CSVs into the configured valid/invalid locations depending on
-    whether required schema columns are present, and it produces a basic
-    drift report using the Kolmogorov-Smirnov test for numeric columns.
-    """
-
-    def __init__(self, config: DataValidationConfig, ingestion_artifact: DataIngestionArtifact):
+    def __init__(self,data_ingestion_artifact:DataIngestionArtifact,
+                        data_validation_config:DataValidationConfig):
         try:
-            self.config = config
-            self.ingestion_artifact = ingestion_artifact
+            self.data_ingestion_artifact=data_ingestion_artifact
+            self.data_validation_config=data_validation_config
             self._schema_config = read_yaml_file(SCHEMA_FILE_PATH)
         except Exception as e:
-            raise SensorException(e, sys) from e
+            raise  SensorException(e,sys)
     
-    def data_ignestion_config(self, config: DataValidationConfig, ingestion_artifact: DataIngestionArtifact):
-        try:
-            self.config = config
-            self.ingestion_artifact = ingestion_artifact
-            self._schema_config = read_yaml_file(SCHEMA_FILE_PATH)
-        
-        except Exception as e:
-            raise SensorException(e, sys) from e
-        
-    def data_validation_config(self, config: DataValidationConfig, ingestion_artifact: DataIngestionArtifact):
-        try:
-            self.config = config
-            self.ingestion_artifact = ingestion_artifact
-            self._schema_config = read_yaml_file(SCHEMA_FILE_PATH)
-        
-        except Exception as e:
-            raise SensorException(e, sys) from e
+    def drop_zero_std_columns(self,dataframe):
+        pass
 
-    def _read_schema(self) -> dict:
-        try:
-            schema = read_yaml_file(SCHEMA_FILE_PATH)
-            if not isinstance(schema, dict):
-                return {}
-            return schema
-        except Exception as e:
-            raise SensorException(e, sys) from e
-        
-    def validate_number_of_columns(self,datafram:pd.DataFrame)->bool:
+
+    def validate_number_of_columns(self,dataframe:pd.DataFrame)->bool:
         try:
             number_of_columns = len(self._schema_config["columns"])
-            logging.info(f"required number of columns: {number_of_columns}")
-            logging.info(f"actual number of columns: {len(datafram.columns)}")
-            if number_of_columns == len(datafram.columns):
+            logging.info(f"Required number of columns: {number_of_columns}")
+            logging.info(f"Data frame has columns: {len(dataframe.columns)}")
+
+            if len(dataframe.columns)==number_of_columns:
                 return True
             return False
         except Exception as e:
-            raise SensorException(e, sys) from e
+            raise SensorException(e,sys)
 
-    def is_numeric_column_exist(self, df: pd.DataFrame, column_name: str) -> bool:
-        """Check if a column exists in the DataFrame and is of numeric type."""
-        if column_name in df.columns:
-            return pd.api.types.is_numeric_dtype(df[column_name])
-        return False
-
-    def validate_schema(self) -> bool:
-        """Validate that required columns (if present in schema) exist in train/test CSVs.
-
-        Copies files into valid/invalid target paths based on validation result.
-        Returns True if both train and test pass schema validation.
-        """
+    def is_numerical_column_exist(self,dataframe:pd.DataFrame)->bool:
         try:
-            schema = self._read_schema()
-            raw_columns = schema.get("columns") if isinstance(schema, dict) else None
+            numerical_columns = self._schema_config["numerical_columns"]
+            dataframe_columns = dataframe.columns
 
-            # normalize schema columns to a set of column names
-            expected_set = set()
-            if raw_columns:
-                if isinstance(raw_columns, dict):
-                    expected_set = set(raw_columns.keys())
-                elif isinstance(raw_columns, list):
-                    for item in raw_columns:
-                        if isinstance(item, str):
-                            expected_set.add(item)
-                        elif isinstance(item, dict):
-                            expected_set.update(item.keys())
-                        else:
-                            try:
-                                expected_set.add(str(item))
-                            except Exception:
-                                continue
+            numerical_column_present = True
+            missing_numerical_columns = []
+
+            for num_column in numerical_columns:
+                if num_column not in dataframe_columns:
+                    numerical_column_present=False
+                    missing_numerical_columns.append(num_column)
+            
+            logging.info(f"Missing numerical columns: [{missing_numerical_columns}]")
+
+            return numerical_column_present
+        
+        except Exception as e:
+            raise SensorException(e,sys)
+        
+
+
+    @staticmethod
+    def read_data(file_path)->pd.DataFrame:
+        try:
+            return pd.read_csv(file_path)
+        except Exception as e:
+            raise SensorException(e,sys)
+    
+
+    def detect_dataset_drift(self,base_df,current_df,threshold=0.05)->bool:
+        try:
+            status=True
+            report ={}
+            for column in base_df.columns:
+                d1 = base_df[column]
+                d2  = current_df[column]
+                is_same_dist = ks_2samp(d1,d2)
+                if threshold<=is_same_dist.pvalue:
+                    is_found=False
                 else:
-                    try:
-                        expected_set = set(raw_columns)
-                    except Exception:
-                        expected_set = set()
-
-            # Load dataframes from ingestion artifact
-            train_path = self.ingestion_artifact.training_file_path
-            test_path = self.ingestion_artifact.testing_file_path
-
-            if not os.path.exists(train_path) or not os.path.exists(test_path):
-                raise SensorException(FileNotFoundError("Train or test file missing from ingestion artifact"), sys)
-
-            train_df = pd.read_csv(train_path)
-            test_df = pd.read_csv(test_path)
-
-            # If schema doesn't declare columns, treat as pass
-            if not expected_set:
-                os.makedirs(os.path.dirname(self.config.valid_train_file_path), exist_ok=True)
-                os.makedirs(os.path.dirname(self.config.valid_test_file_path), exist_ok=True)
-                shutil.copy(train_path, self.config.valid_train_file_path)
-                shutil.copy(test_path, self.config.valid_test_file_path)
-                return True
-
-            # If schema didn't provide any columns, treat as pass above
-            train_ok = expected_set.issubset(set(train_df.columns))
-            test_ok = expected_set.issubset(set(test_df.columns))
-
-            # Ensure directories exist
-            os.makedirs(os.path.dirname(self.config.valid_train_file_path), exist_ok=True)
-            os.makedirs(os.path.dirname(self.config.invalid_train_file_path), exist_ok=True)
-            os.makedirs(os.path.dirname(self.config.valid_test_file_path), exist_ok=True)
-            os.makedirs(os.path.dirname(self.config.invalid_test_file_path), exist_ok=True)
-
-            # Copy to appropriate locations
-            if train_ok:
-                shutil.copy(train_path, self.config.valid_train_file_path)
-            else:
-                shutil.copy(train_path, self.config.invalid_train_file_path)
-
-            if test_ok:
-                shutil.copy(test_path, self.config.valid_test_file_path)
-            else:
-                shutil.copy(test_path, self.config.invalid_test_file_path)
-
-            return bool(train_ok and test_ok)
+                    is_found = True 
+                    status=False
+                report.update({column:{
+                    "p_value":float(is_same_dist.pvalue),
+                    "drift_status":is_found
+                    
+                    }})
+            
+            drift_report_file_path = self.data_validation_config.drift_report_file_path
+            
+            #Create directory
+            dir_path = os.path.dirname(drift_report_file_path)
+            os.makedirs(dir_path,exist_ok=True)
+            write_yaml_file(file_path=drift_report_file_path,content=report,)
+            return status
         except Exception as e:
-            raise SensorException(e, sys) from e
+            raise SensorException(e,sys)
+   
 
-    def detect_data_drift(self) -> dict:
-        """Detect drift between train and test for numeric columns and write a YAML report.
-
-        Returns a dict with per-column p-values and drift boolean.
-        """
+    def initiate_data_validation(self)->DataValidationArtifact:
         try:
-            # Prefer validated files if present
-            train_path = self.config.valid_train_file_path if os.path.exists(self.config.valid_train_file_path) else self.ingestion_artifact.training_file_path
-            test_path = self.config.valid_test_file_path if os.path.exists(self.config.valid_test_file_path) else self.ingestion_artifact.testing_file_path
+            error_message = ""
+            train_file_path = self.data_ingestion_artifact.trained_file_path
+            test_file_path = self.data_ingestion_artifact.test_file_path
 
-            train_df = pd.read_csv(train_path)
-            test_df = pd.read_csv(test_path)
+            #Reading data from train and test file location
+            train_dataframe = DataValidation.read_data(train_file_path)
+            test_dataframe = DataValidation.read_data(test_file_path)
 
-            report = {}
-            common_cols = set(train_df.columns).intersection(set(test_df.columns))
-            for col in sorted(common_cols):
-                try:
-                    if pd.api.types.is_numeric_dtype(train_df[col]) and pd.api.types.is_numeric_dtype(test_df[col]):
-                        _, pvalue = ks_2samp(train_df[col].dropna(), test_df[col].dropna())
+            #Validate number of columns
+            status = self.validate_number_of_columns(dataframe=train_dataframe)
+            if not status:
+                error_message=f"{error_message}Train dataframe does not contain all columns.\n"
+            status = self.validate_number_of_columns(dataframe=test_dataframe)
+            if not status:
+                error_message=f"{error_message}Test dataframe does not contain all columns.\n"
+        
 
-                        # coerce pvalue to float safely using numbers.Number checks
-                        if isinstance(pvalue, numbers.Number):
-                            pval = float(pvalue)  # type: ignore
-                        elif isinstance(pvalue, (list, tuple)) and len(pvalue) > 0:
-                            # try last element
-                            last = pvalue[-1]
-                            if isinstance(last, numbers.Number):
-                                pval = float(last)  # type: ignore
-                            else:
-                                try:
-                                    pval = float(str(last))
-                                except (ValueError, TypeError):
-                                    continue
-                        else:
-                            try:
-                                pval = float(str(pvalue))
-                            except (ValueError, TypeError):
-                                continue
+            #Validate numerical columns
 
-                        report[col] = {"p_value": pval, "drift_detected": (pval < 0.05)}
-                except (ValueError, TypeError) as e:
-                    # skip columns that cause test failures (e.g., non-numeric conversion issues)
-                    logging.debug("Skipping column %s due to error: %s", col, e)
-                    continue
+            status = self.is_numerical_column_exist(dataframe=train_dataframe)
+            if not status:
+                error_message=f"{error_message}Train dataframe does not contain all numerical columns.\n"
+            
+            status = self.is_numerical_column_exist(dataframe=test_dataframe)
+            if not status:
+                error_message=f"{error_message}Test dataframe does not contain all numerical columns.\n"
+            
+            if len(error_message)>0:
+                raise Exception(error_message)
 
-            # persist the report
-            os.makedirs(os.path.dirname(self.config.drift_report_file_path), exist_ok=True)
-            write_yaml_file(self.config.drift_report_file_path, report)
-            return report
-        except Exception as e:
-            raise SensorException(e, sys) from e
+            #Let check data drift
+            status = self.detect_dataset_drift(base_df=train_dataframe,current_df=test_dataframe)
 
-    def initiate_data_validation(self) -> DataValidationArtifact:
-        try:
-            status = self.validate_schema()
-            drift_report = self.detect_data_drift()
-            logging.debug("Drift report generated with %d entries", len(drift_report) if isinstance(drift_report, dict) else 0)
-            artifact = DataValidationArtifact(
+            data_validation_artifact = DataValidationArtifact(
                 validation_status=status,
-                valid_train_file_path=self.config.valid_train_file_path if os.path.exists(self.config.valid_train_file_path) else "",
-                valid_test_file_path=self.config.valid_test_file_path if os.path.exists(self.config.valid_test_file_path) else "",
-                invalid_train_file_path=self.config.invalid_train_file_path if os.path.exists(self.config.invalid_train_file_path) else "",
-                invalid_test_file_path=self.config.invalid_test_file_path if os.path.exists(self.config.invalid_test_file_path) else "",
-                drift_report_file_path=self.config.drift_report_file_path,
+                valid_train_file_path=self.data_ingestion_artifact.trained_file_path,
+                valid_test_file_path=self.data_ingestion_artifact.test_file_path,
+                invalid_train_file_path=None,
+                invalid_test_file_path=None,
+                drift_report_file_path=self.data_validation_config.drift_report_file_path,
             )
 
-            train_dataframe = pd.read_csv(artifact.valid_train_file_path)
-            test_dataframe = pd.read_csv(artifact.valid_test_file_path)
+            logging.info(f"Data validation artifact: {data_validation_artifact}")
 
-            status = all(self.is_numeric_column_exist(df=train_dataframe, column_name=col) for col in train_dataframe.columns)
-            if not status:
-                raise SensorException(Exception("Not all columns in the training data are numeric as required."), sys)
-
-            status = all(self.is_numeric_column_exist(df=test_dataframe, column_name=col) for col in test_dataframe.columns)
-            if not status:
-                raise SensorException(ValueError("Not all columns in the test data are numeric as required."), sys)
-
-            logging.info("Data validation completed. Artifact: %s", artifact)
-            return artifact
+            return data_validation_artifact
         except Exception as e:
-            raise SensorException(e, sys) from e
+            raise SensorException(e,sys)
+        
+
+
+
+
+
 

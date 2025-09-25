@@ -9,8 +9,11 @@ FILE_NAME = "sensor.csv"
 TRAIN_FILE_NAME: str = "train.csv"
 TEST_FILE_NAME: str = "test.csv"
 
+
 PREPROCSSING_OBJECT_FILE_NAME = "preprocessing.pkl"
 MODEL_FILE_NAME = "model.pkl"
+
+
 SCHEMA_FILE_PATH = os.path.join("config", "schema.yaml")
 SCHEMA_DROP_COLS = "drop_columns"
 
@@ -27,14 +30,20 @@ DATA_INGESTION_TRAIN_TEST_SPLIT_RATION: float = 0.2
 
 
 
+"""
+Data Validation realted contant start with DATA_VALIDATION VAR NAME
+"""
 
-DATA_VALIDATION_DIR_NAME = "data_validation"
-DATA_VALIDATION_VALID_DIR = "valid_data"
-DATA_VALIDATION_INVALID_DIR = "invalid_data"
-DATA_VALIDATION_DRIFT_REPORT_DIR = "drift_report"
-DATA_VALIDATION_DRIFT_REPORT_FILE_NAME = "report.yaml"
+DATA_VALIDATION_DIR_NAME: str = "data_validation"
+DATA_VALIDATION_VALID_DIR: str = "validated"
+DATA_VALIDATION_INVALID_DIR: str = "invalid"
+DATA_VALIDATION_DRIFT_REPORT_DIR: str = "drift_report"
+DATA_VALIDATION_DRIFT_REPORT_FILE_NAME: str = "report.yaml"
 
-SAVED_MODEL_DIR = "saved_models"
-MODEL_FILE_NAME = "model.pkl"
-PREPROCESSING_OBJECT_FILE_NAME = "preprocessing.pkl"
-TARGET_ENCODER_OBJECT_FILE_NAME = "target_encoder.pkl"
+
+
+
+
+
+
+
