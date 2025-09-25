@@ -1,10 +1,17 @@
+from sensor.components import data_validation
 from sensor.exception import SensorException
+import certifi
 import os
 import sys
 import argparse
 from sensor.logger import logging
+from sensor.pipeline.traning_pipeline import TrainPipeline
 from sensor.utils import dump_csv_file_to_mongodb_collection
 from sensor.entity.config_entity import TrainingPipelineConfig, DataIngestionConfig
+from sensor.constant.training_pipeline import SCHEMA_FILE_PATH
+from sensor.components.data_ingestion import DataIngestion
+from sensor.components.data_validation import DataValidation
+
 
 # def test_exception():
 #     try:
@@ -86,14 +93,8 @@ def main() -> None:
         raise SensorException(e, sys) from e
 
 
-
 if __name__ == "__main__":
     main()
-
-
-
-
-  
 
 
 

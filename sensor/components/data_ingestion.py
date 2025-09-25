@@ -10,6 +10,8 @@ from sensor.logger import logging
 from sensor.entity.artifact_entity import DataIngestionArtifact
 from sensor.entity.config_entity import DataIngestionConfig
 from sensor.data_access.sensor_data import SensorData
+from sensor.utils.main_utils    import read_yaml_file
+from sensor.constant.training_pipeline import SCHEMA_FILE_PATH
 
 
 class DataIngestion:
@@ -20,6 +22,7 @@ class DataIngestion:
 
     def __init__(self, data_ingestion_config: DataIngestionConfig) -> None:
         self.data_ingestion_config = data_ingestion_config
+        self._schema_config = read_yaml_file(SCHEMA_FILE_PATH)
 
     def export_data_into_feature_store(self) -> DataFrame:
         try:
@@ -57,8 +60,9 @@ class DataIngestion:
     def initiate_data_ingestion(self) -> DataIngestionArtifact:
         try:
             dataframe = self.export_data_into_feature_store()
+            dataframe=dataframe.drop(self._schema_config["drop_columns"], axis=1, inplace=True)
             self.split_data_as_train_test(data_frame=dataframe)
-
+            
             data_ingestion_artifact = DataIngestionArtifact(
                 feature_store_file_path=self.data_ingestion_config.feature_store_file_path,
                 training_file_path=self.data_ingestion_config.training_file_path,

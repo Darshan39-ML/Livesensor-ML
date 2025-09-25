@@ -18,6 +18,8 @@ class TrainingPipelineConfig:
         self.timestamp = ts
         self.pipeline_name = training_pipeline.PIPELINE_NAME
         self.artifact_dir = os.path.join(training_pipeline.ARTIFACT_DIR, ts)
+        self.data_ingestion_config = DataIngestionConfig(self)
+        self.data_validation_config = DataValidationConfig(self)
 
 
 class DataIngestionConfig:
@@ -47,6 +49,7 @@ class DataIngestionConfig:
 
 class DataValidationConfig:
     def __init__(self, training_pipeline_config: TrainingPipelineConfig):
+
         self.data_validation_dir: str = os.path.join(
             training_pipeline_config.artifact_dir, training_pipeline.DATA_VALIDATION_DIR_NAME
         )

@@ -33,3 +33,8 @@ DATA_VALIDATION_VALID_DIR = "valid_data"
 DATA_VALIDATION_INVALID_DIR = "invalid_data"
 DATA_VALIDATION_DRIFT_REPORT_DIR = "drift_report"
 DATA_VALIDATION_DRIFT_REPORT_FILE_NAME = "report.yaml"
+
+SAVED_MODEL_DIR = "saved_models"
+MODEL_FILE_NAME = "model.pkl"
+PREPROCESSING_OBJECT_FILE_NAME = "preprocessing.pkl"
+TARGET_ENCODER_OBJECT_FILE_NAME = "target_encoder.pkl"
