@@ -1,4 +1,4 @@
-from distutils import dir_util
+import shutil
 
 from sensor.constant.training_pipeline import SCHEMA_FILE_PATH
 
@@ -22,8 +22,9 @@ class DataValidation:
             self.data_ingestion_artifact=data_ingestion_artifact
             self.data_validation_config=data_validation_config
             self._schema_config = read_yaml_file(SCHEMA_FILE_PATH)
+        
         except Exception as e:
-            raise  SensorException(e,sys)
+            raise  SensorException(e, sys)
     
     def drop_zero_std_columns(self,dataframe):
         pass
