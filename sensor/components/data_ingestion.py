@@ -21,7 +21,7 @@ class DataIngestion:
 
             
         except Exception as e:
-            raise SensorException(e,sys)
+            raise SensorException(e,sys) from e
         
 
     def export_data_into_feature_store(self) -> DataFrame:
@@ -45,8 +45,8 @@ class DataIngestion:
             dataframe.to_csv(feature_store_file_path,index=False,header=True)
             return dataframe
         
-        except  Exception as e:
-            raise  SensorException(e,sys)
+        except Exception as e:
+            raise SensorException(e,sys) from e
         
 
 
@@ -80,7 +80,7 @@ class DataIngestion:
             logging.info(f"Exported train and test file path.")
         
         except Exception as e:
-            raise SensorException(e, sys)
+            raise SensorException(e,sys) from e
      
 
     def initiate_data_ingestion(self) -> DataIngestionArtifact:
@@ -98,7 +98,7 @@ class DataIngestion:
             return data_ingestion_artifact
         
         except Exception as e:
-            raise SensorException(e,sys)
+            raise SensorException(e,sys) from e
 
 
 
