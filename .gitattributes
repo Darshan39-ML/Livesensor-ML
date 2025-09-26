@@ -4,4 +4,5 @@ archive/aps_failure_training_set_processed_8bit.csv filter=lfs diff=lfs merge=lf
 . filter=lfs diff=lfs merge=lfs -text
 new filter=lfs diff=lfs merge=lfs -text
 artifact filter=lfs diff=lfs merge=lfs -text
+train.npy filter=lfs diff=lfs merge=lfs -text
 *.npy filter=lfs diff=lfs merge=lfs -text
