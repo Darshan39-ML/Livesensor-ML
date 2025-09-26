@@ -6,6 +6,7 @@ from sensor.logger import logging
 #from sensor.entity.config_entity  import TrainingPipelineConfig,DataIngestionConfig
 
 from sensor.pipeline.training_pipeline import TrainPipeline
+from sensor.components.data_transformation import DataTransformation
 
 # def test_exception():
 #     try:
@@ -25,8 +26,6 @@ if __name__ == "__main__":
 
     training_pipeline = TrainPipeline()
     training_pipeline.run_pipeline()
-
-
 
 
 
