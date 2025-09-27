@@ -12,6 +12,8 @@ from sensor.entity.config_entity import TrainingPipelineConfig,DataIngestionConf
 
 from sensor.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact, DataTransformationArtifact
 
+from sensor.entity.artifact_entity import classification_metric_artifact
+from sensor.entity.config_entity import ModelTrainerConfig
 
 
 
@@ -83,7 +85,9 @@ class TrainPipeline:
             data_validation_artifact=self.start_data_validaton(data_ingestion_artifact=data_ingestion_artifact)
 
             data_tranformation_artifact = self.start_data_transformation(data_validation_artifact=data_validation_artifact)
-        
+            
+            model_trainer_config = ModelTrainerConfig(training_pipeline_config=self.training_pipeline_config)
+
         except  Exception as e:
             raise  SensorException(e, sys) from e
 

@@ -11,3 +11,21 @@ class TargetValueMapping:
     def reverse_mapping(self):
         mapping_response = self.to_dict()
         return dict(zip(mapping_response.values(), mapping_response.keys()))
+    
+
+
+class SensorModel:
+    def __init__(self, preprocessing, model):
+        try:
+            self.preprocessing = preprocessing
+            self.model = model
+        except Exception as e:
+            raise e
+    
+    def predict(self, X):
+        try:
+            X_transformed = self.preprocessing.transform(X)
+            y_hat = self.model.predict(X_transformed)
+            return y_hat
+        except Exception as e:
+            raise e

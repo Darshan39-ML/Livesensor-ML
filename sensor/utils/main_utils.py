@@ -1,5 +1,4 @@
 import yaml
-import pandas as pd
 import numpy as np
 import os
 import pickle
@@ -77,4 +76,14 @@ def save_object(file_path: str, obj: object) -> None:
         raise SensorException(e, sys) from e
 
 
-
+def load_object(file_path: str) -> object:
+    try:
+        logging.info("Entered the load_object method of MainUtils class")
+        if not os.path.exists(file_path):
+            return None
+        with open(file_path, "rb") as file_obj:
+            obj = pickle.load(file_obj)  # <-- The fix
+        logging.info("Exited the load_object method of MainUtils class")
+        return obj
+    except Exception as e:
+        raise SensorException(e, sys) from e

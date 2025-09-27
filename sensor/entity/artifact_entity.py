@@ -27,3 +27,17 @@ class DataTransformationArtifact:
     transformed_test_file_path: str
 
     
+class classification_metric_artifact:
+    def __init__(self,f1_score:float,precision_score:float,recall_score:float,accuracy_score:float):
+        self.f1_score=f1_score
+        self.precision_score=precision_score
+        self.recall_score=recall_score
+        self.accuracy_score=accuracy_score
+
+@dataclass
+class ModelTrainerArtifact:
+    trained_model_file_path: str
+    train_metric_artifact:classification_metric_artifact
+    test_metric_artifact:classification_metric_artifact
+    is_model_accepted:bool
+    improved_accuracy:float
