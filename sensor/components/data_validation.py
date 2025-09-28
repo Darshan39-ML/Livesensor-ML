@@ -1,3 +1,5 @@
+from distutils import dir_util
+
 from sensor.constant.training_pipeline import SCHEMA_FILE_PATH
 
 from sensor.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact
@@ -20,9 +22,8 @@ class DataValidation:
             self.data_ingestion_artifact=data_ingestion_artifact
             self.data_validation_config=data_validation_config
             self._schema_config = read_yaml_file(SCHEMA_FILE_PATH)
-        
         except Exception as e:
-            raise  SensorException(e, sys) from e
+            raise  SensorException(e,sys)
     
     def drop_zero_std_columns(self,dataframe):
         pass
@@ -38,7 +39,7 @@ class DataValidation:
                 return True
             return False
         except Exception as e:
-            raise SensorException(e,sys) from e
+            raise SensorException(e,sys)
 
     def is_numerical_column_exist(self,dataframe:pd.DataFrame)->bool:
         try:
@@ -58,7 +59,7 @@ class DataValidation:
             return numerical_column_present
         
         except Exception as e:
-            raise SensorException(e,sys) from e
+            raise SensorException(e,sys)
         
 
 
@@ -67,7 +68,7 @@ class DataValidation:
         try:
             return pd.read_csv(file_path)
         except Exception as e:
-            raise SensorException(e,sys) from e
+            raise SensorException(e,sys)
     
 
     def detect_dataset_drift(self,base_df,current_df,threshold=0.05)->bool:
@@ -97,7 +98,7 @@ class DataValidation:
             write_yaml_file(file_path=drift_report_file_path,content=report,)
             return status
         except Exception as e:
-            raise SensorException(e,sys) from e
+            raise SensorException(e,sys)
    
 
     def initiate_data_validation(self)->DataValidationArtifact:
@@ -130,7 +131,7 @@ class DataValidation:
                 error_message=f"{error_message}Test dataframe does not contain all numerical columns.\n"
             
             if len(error_message)>0:
-                raise Exception(error_message) from e
+                raise Exception(error_message)
 
             #Let check data drift
             status = self.detect_dataset_drift(base_df=train_dataframe,current_df=test_dataframe)
@@ -148,7 +149,7 @@ class DataValidation:
 
             return data_validation_artifact
         except Exception as e:
-            raise SensorException(e,sys) from e
+            raise SensorException(e,sys)
         
 
 

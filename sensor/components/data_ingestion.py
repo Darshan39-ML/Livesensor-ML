@@ -9,7 +9,8 @@ from sensor.entity.artifact_entity import DataIngestionArtifact
 from sensor.data_access.sensor_data import SensorData
 from sklearn.model_selection import train_test_split
 
-from sensor.utils.main_utils import read_yaml_file
+from sensor.utils.main_utils import read_yaml_file  
+
 from sensor.constant.training_pipeline import SCHEMA_FILE_PATH
 
 
@@ -21,7 +22,7 @@ class DataIngestion:
 
             
         except Exception as e:
-            raise SensorException(e,sys) from e
+            raise SensorException(e,sys)
         
 
     def export_data_into_feature_store(self) -> DataFrame:
@@ -45,8 +46,8 @@ class DataIngestion:
             dataframe.to_csv(feature_store_file_path,index=False,header=True)
             return dataframe
         
-        except Exception as e:
-            raise SensorException(e,sys) from e
+        except  Exception as e:
+            raise  SensorException(e,sys)
         
 
 
@@ -78,9 +79,8 @@ class DataIngestion:
             )
 
             logging.info(f"Exported train and test file path.")
-        
         except Exception as e:
-            raise SensorException(e,sys) from e
+            raise SensorData(e,sys)
      
 
     def initiate_data_ingestion(self) -> DataIngestionArtifact:
@@ -98,7 +98,7 @@ class DataIngestion:
             return data_ingestion_artifact
         
         except Exception as e:
-            raise SensorException(e,sys) from e
+            raise SensorException(e,sys)
 
 
 

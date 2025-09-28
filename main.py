@@ -4,9 +4,10 @@ import os , sys
 from sensor.logger import logging
 #from  sensor.utils import dump_csv_file_to_mongodb_collecton
 #from sensor.entity.config_entity  import TrainingPipelineConfig,DataIngestionConfig
-
+import warnings
+# Filter out the specific FutureWarning from xgboost
+warnings.filterwarnings("ignore", category=FutureWarning, module="xgboost")
 from sensor.pipeline.training_pipeline import TrainPipeline
-from sensor.components.data_transformation import DataTransformation
 
 # def test_exception():
 #     try:
@@ -26,6 +27,8 @@ if __name__ == "__main__":
 
     training_pipeline = TrainPipeline()
     training_pipeline.run_pipeline()
+
+
 
 
 

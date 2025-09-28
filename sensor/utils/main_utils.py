@@ -1,7 +1,8 @@
 import yaml
+import pandas as pd
 import numpy as np
 import os
-import pickle
+import dill
 import sys
 from sensor.exception import SensorException
 from sensor.logger import logging
@@ -69,21 +70,22 @@ def save_object(file_path: str, obj: object) -> None:
         logging.info("Entered the save_object method of MainUtils class")
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "wb") as file_obj:
-            pickle.dump(obj, file_obj)  # <-- The fix
+            dill.dump(obj, file_obj)
         logging.info("Exited the save_object method of MainUtils class")
     except Exception as e:
-        # Assuming SensorException and sys are correctly defined/imported
         raise SensorException(e, sys) from e
+    
 
 
-def load_object(file_path: str) -> object:
+
+def load_object(file_path: str, ) -> object:
     try:
-        logging.info("Entered the load_object method of MainUtils class")
         if not os.path.exists(file_path):
-            return None
+            raise Exception(f"The file: {file_path} is not exists")
         with open(file_path, "rb") as file_obj:
-            obj = pickle.load(file_obj)  # <-- The fix
-        logging.info("Exited the load_object method of MainUtils class")
-        return obj
+            return dill.load(file_obj)
     except Exception as e:
         raise SensorException(e, sys) from e
+
+
+
