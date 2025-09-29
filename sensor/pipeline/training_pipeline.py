@@ -61,7 +61,7 @@ class TrainPipeline:
             logging.info(f"Data ingestion completed and artifact: {data_ingestion_artifact}")
             return data_ingestion_artifact
         except  Exception as e:
-            raise  SensorException(e,sys)
+            raise  SensorException(e, sys) from  e
 
 
 
@@ -83,7 +83,7 @@ class TrainPipeline:
             return data_validation_artifact
         
         except  Exception as e:
-            raise  SensorException(e,sys)
+            raise  SensorException(e, sys) from e
 
 
 
@@ -104,7 +104,7 @@ class TrainPipeline:
 
             return data_transformation_artifact
         except  Exception as e:
-            raise  SensorException(e,sys)
+            raise  SensorException(e, sys) from e
 
 
     def start_model_trainer(self,data_transformation_artifact:DataTransformationArtifact):
@@ -114,7 +114,7 @@ class TrainPipeline:
             model_trainer_artifact = model_trainer.initiate_model_trainer()
             return model_trainer_artifact
         except  Exception as e:
-            raise  SensorException(e,sys)
+            raise  SensorException(e, sys) from e
         
 
     def start_model_evaluation(self,data_validation_artifact:DataValidationArtifact,
@@ -132,7 +132,7 @@ class TrainPipeline:
         
 
         except  Exception as e:
-            raise  SensorException(e,sys)
+            raise  SensorException(e, sys) from e
 
 
 
@@ -158,17 +158,17 @@ class TrainPipeline:
             data_transformation_artifact = self.start_data_transformation(data_validation_artifact=data_validation_artifact)
 
 
-            model_trainer_artifact = self.start_model_trainer(data_transformation_artifact) 
+            model_trainer_artifact = self.start_model_trainer(data_transformation_artifact)
 
 
             
-            model_eval_artifact = self.start_model_evaluation(data_validation_artifact, model_trainer_artifact)  
+            model_eval_artifact = self.start_model_evaluation(data_validation_artifact, model_trainer_artifact)
             
             if not model_eval_artifact.is_model_accepted:
-                raise Exception("Trained model is not better than the best model")          
+                raise Exception("Trained model is not better than the best model")       
  
 
-            
+            logging.info(f"Model evaluation completed and artifact: {model_eval_artifact}")
         except Exception as e :    
-            raise  SensorException(e,sys)
+            raise  SensorException(e, sys) from e
         
