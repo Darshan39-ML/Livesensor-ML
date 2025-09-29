@@ -1,3 +1,4 @@
+from sensor.components.model_pusher import ModelPusher
 from sensor.entity.config_entity import TrainingPipelineConfig ,DataIngestionConfig
 from sensor.exception  import SensorException
 from sensor.entity.artifact_entity import DataIngestionArtifact
@@ -8,15 +9,11 @@ from sensor.components.data_ingestion import DataIngestion
 
 from sensor.components.data_validation import DataValidation
 
-from sensor.entity.config_entity import TrainingPipelineConfig,DataIngestionConfig,DataValidationConfig
 
-from sensor.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact
-
-
-from sensor.entity.config_entity import TrainingPipelineConfig,DataIngestionConfig,DataValidationConfig,DataTransformationConfig
+from sensor.entity.config_entity import TrainingPipelineConfig,DataIngestionConfig,DataValidationConfig,DataTransformationConfig, ModelPusherConfig
 
 
-from sensor.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact,DataTransformationArtifact
+from sensor.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact,DataTransformationArtifact, ModelPusherArtifact
 
 from sensor.components.data_transformation import DataTransformation
 
@@ -137,7 +134,16 @@ class TrainPipeline:
 
 
 
+    def start_model_pusher(self, model_eval_artifact:ModelEvaluationArtifact):
+        try:
+            model_pusher_config = ModelPusherConfig(training_pipeline_config=self.training_pipeline_config)
+            model_pusher = ModelPusher(model_pusher_config, model_eval_artifact)
 
+            model_pusher_artifact = model_pusher.initiate_model_pusher()
+
+            return model_pusher_artifact
+        except  Exception as e:
+            raise  SensorException(e, sys) from e
 
 
 
@@ -165,7 +171,9 @@ class TrainPipeline:
             model_eval_artifact = self.start_model_evaluation(data_validation_artifact, model_trainer_artifact)
             
             if not model_eval_artifact.is_model_accepted:
-                raise Exception("Trained model is not better than the best model")       
+                raise Exception("Trained model is not better than the best model")      
+
+            model_eval_artifact = self.start_model_evaluation(data_validation_artifact, model_trainer_artifact) 
  
 
             logging.info(f"Model evaluation completed and artifact: {model_eval_artifact}")
