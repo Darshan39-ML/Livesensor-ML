@@ -40,12 +40,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/"tags=["authentication"])
+@app.get("/",tags=["authentication"])
 async def index():
     return RedirectResponse(url="/docs")
 
 
 @app.get("/train")
+async def train():
+    try:
+        training_pipeline = TrainPipeline()
+        if training_pipeline.is_pipeline_running:
+            return Response("Training pipeline is already running")
+        
+        training_pipeline.run_pipeline()
+        return Response("training successfuly completed")
+
+    except Exception as e:
+        return Response(f"error occured :"{e})
+    
 
 
 

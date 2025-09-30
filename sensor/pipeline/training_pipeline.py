@@ -39,6 +39,7 @@ from sensor.constant.training_pipeline import SAVED_MODEL_DIR
 
 
 class TrainPipeline:
+    is_pipeline_running = False
 
     def __init__(self):
         self.training_pipeline_config = TrainingPipelineConfig()
@@ -152,6 +153,9 @@ class TrainPipeline:
 
     def run_pipeline(self):
         try:
+            TrainPipeline.is_pipeline_running=True
+
+
             data_ingestion_artifact:DataIngestionArtifact = self.start_data_ingestion()
 
 
@@ -177,6 +181,9 @@ class TrainPipeline:
  
 
             logging.info(f"Model evaluation completed and artifact: {model_eval_artifact}")
-        except Exception as e :    
+            TrainPipeline.is_pipeline_running=False
+
+        except Exception as e :
+            TrainPipeline.is_pipeline_running=False
             raise  SensorException(e, sys) from e
         
