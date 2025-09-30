@@ -1,3 +1,2 @@
-artifact filter=lfs diff=lfs merge=lfs -text
-aps_failure_training_set1.csv filter=lfs diff=lfs merge=lfs -text
+
 *.npy filter=lfs diff=lfs merge=lfs -text

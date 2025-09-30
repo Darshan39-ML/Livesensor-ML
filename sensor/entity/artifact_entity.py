@@ -54,8 +54,10 @@ class ModelEvaluationArtifact:
     best_model_metric_artifact: ClassificationMetricArtifact
 
 
-@dataclass
 
+@dataclass
 class ModelPusherArtifact:
-    Saved_model_path: str
-    model_file_path: str
+    saved_model_path:str   
+    model_file_path:str
+
+    

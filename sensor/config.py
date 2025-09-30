@@ -6,7 +6,7 @@ import pymongo
 
 
 class EnvironmentVariable:
-    mongo_db_url:str = os.getenv("MONGODB_URL")
+    mongo_db_url:str = os.getenv("MONGO_DB_URL")
 
 
 
