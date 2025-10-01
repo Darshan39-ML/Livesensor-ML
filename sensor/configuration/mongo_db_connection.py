@@ -11,7 +11,7 @@ import logging
 load_dotenv(dotenv_path='path/to/your/.env') # e.g. .env is in a folder called 'config' so it would be 'config/.env'
 
 class MongoDBClient:
-    
+
 
     def __init__(self, database_name=DATABASE_NAME) -> None:
         client = None
