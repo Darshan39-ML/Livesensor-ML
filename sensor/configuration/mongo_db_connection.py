@@ -8,17 +8,20 @@ import os
 import logging 
 
 # Fix: provide the path to your .env file
-load_dotenv(dotenv_path='path/to/your/.env') # e.g. .env is in a folder called 'config' so it would be 'config/.env'
-
+load_dotenv(dotenv_path='/home/darshan39/Downloads/Sensor-ML/.env') # e.g. .env is in a folder called 'config' so it would be 'config/.env'
+client = None
 class MongoDBClient:
 
 
     def __init__(self, database_name=DATABASE_NAME) -> None:
-        client = None
+        
         try:
+            
             if MongoDBClient.client is None:
                 mongo_db_url = os.getenv(MONGODB_URL_KEY)
-                logging.info(f"Retrieved MongoDB URL: {mongo_db_url}")
+                logging.info("Retrieved MongoDB URL: %s", mongo_db_url)
+# OR using the slightly newer style:
+# logging.info("Retrieved MongoDB URL: {}", mongo_db_url)
 
                 if not mongo_db_url:
                     raise ValueError(f"MongoDB URL not found. Please set {MONGODB_URL_KEY} in your environment variables or .env file.")
@@ -32,5 +35,5 @@ class MongoDBClient:
             self.database = self.client[database_name]
             self.database_name = database_name
         except Exception as e:
-            logging.error(f"Error initializing MongoDB client: {e}")
+            logging.error('Error initializing MongoDB client: %s!', e)
             raise
