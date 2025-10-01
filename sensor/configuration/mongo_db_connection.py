@@ -7,17 +7,23 @@ from sensor.constant.env_variable import MONGODB_URL_KEY
 import os 
 import logging 
 
-load_dotenv()
+# Fix: provide the path to your .env file
+load_dotenv(dotenv_path='path/to/your/.env') # e.g. .env is in a folder called 'config' so it would be 'config/.env'
+
 class MongoDBClient:
-    client = None
+    
 
     def __init__(self, database_name=DATABASE_NAME) -> None:
+        client = None
         try:
             if MongoDBClient.client is None:
                 mongo_db_url = os.getenv(MONGODB_URL_KEY)
                 logging.info(f"Retrieved MongoDB URL: {mongo_db_url}")
 
-                if "localhost" in mongo_db_url:
+                if not mongo_db_url:
+                    raise ValueError(f"MongoDB URL not found. Please set {MONGODB_URL_KEY} in your environment variables or .env file.")
+
+                if "mongodb+srv://darshan39:Krishn_4@cluster0.puwtldn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0" in mongo_db_url:
                     MongoDBClient.client = pymongo.MongoClient(mongo_db_url)
                 else:
                     MongoDBClient.client = pymongo.MongoClient(mongo_db_url, tlsCAFile=ca)   #TLS/SSl 
