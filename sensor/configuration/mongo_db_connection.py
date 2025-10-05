@@ -11,7 +11,7 @@ def get_mongodb_connection():
     # Fallback to environment variables (for local development)
     elif os.getenv('MONGODB_URI'):
         mongodb_uri = os.getenv('MONGODB_URI')
-        st.sidebar.info("🛠️ Using Local Environment")
+        st.sidebar.info(" Using Local Environment")
     
     else:
         st.error(" No MongoDB connection string found")
@@ -25,7 +25,7 @@ def get_mongodb_connection():
         st.sidebar.success(" Connected to MongoDB")
         return client
     except Exception as e:
-        st.error(f"❌ MongoDB connection failed: {e}")
+        st.error(f" MongoDB connection failed: {e}")
         return None
 
 # Usage
