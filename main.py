@@ -1,4 +1,4 @@
-from sensor.configuration.mongo_db_connection import MongoDBClient
+from sensor.configuration.mongo_db_connection import get_mongodb_connection
 from sensor.exception import SensorException
 import os , sys
 from sensor.logger import logging
@@ -7,7 +7,7 @@ from sensor.logger import logging
 from sensor.pipeline.training_pipeline import TrainPipeline
 from sensor.utils.main_utils import load_object
 from sensor.ml.model.estimator import ModelResolver,TargetValueMapping
-from sensor.configuration.mongo_db_connection import MongoDBClient
+from sensor.configuration.mongo_db_connection import get_mongodb_connection
 from sensor.exception import SensorException
 import os,sys
 from sensor.logger import logging
