@@ -18,6 +18,8 @@ class SensorData:
    
         try:
             self.mongo_client = MongoDBClient(database_name=DATABASE_NAME)
+            if self.mongo_client is None or self.mongo_client.client is None:
+                raise SensorException("MongoDB is not configured. Set MONGODB_URI to enable DB operations.", sys)
 
         except Exception as e:
             raise SensorException(e, sys)
@@ -28,6 +30,9 @@ class SensorData:
             data_frame=pd.read_csv(file_path)
             data_frame.reset_index(drop=True, inplace=True)
             records = list(json.loads(data_frame.T.to_json()).values())
+            if self.mongo_client is None or self.mongo_client.client is None:
+                raise SensorException("MongoDB is not configured. Set MONGODB_URI to enable DB operations.", sys)
+
             if database_name is None:
                 collection = self.mongo_client.database[collection_name]
             else:
@@ -45,6 +50,9 @@ class SensorData:
             export entire collectin as dataframe:
             return pd.DataFrame of collection
             """
+            if self.mongo_client is None or self.mongo_client.client is None:
+                raise SensorException("MongoDB is not configured. Set MONGODB_URI to enable DB operations.", sys)
+
             if database_name is None:
                 collection = self.mongo_client.database[collection_name]
             else:

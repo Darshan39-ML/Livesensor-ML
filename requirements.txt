@@ -17,3 +17,6 @@ streamlit>=1.20.0
 python-multipart>=0.0.5
 
 -e .
+pytest>=7.0.0
+
+-e .

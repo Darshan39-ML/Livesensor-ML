@@ -112,10 +112,15 @@ async def health():
     try:
         # try a quick MongoDB ping via the wrapper
         client = MongoDBClient()
-        # will raise if cannot connect
-        client.client.admin.command("ping")
-        status["mongodb"] = "ok"
-        client.close()
+        if client.client is None:
+            status["mongodb"] = "not_configured"
+        elif getattr(client, 'is_in_memory', False):
+            status["mongodb"] = "in_memory"
+        else:
+            # will raise if cannot connect
+            client.client.admin.command("ping")
+            status["mongodb"] = "ok"
+            client.close()
     except Exception as e:
         status["mongodb"] = f"error: {e}"
 

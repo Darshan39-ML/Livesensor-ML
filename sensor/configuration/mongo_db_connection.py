@@ -47,14 +47,55 @@ def get_mongodb_connection():
             mongodb_uri = None
 
     if not mongodb_uri:
-        # Do not try to show Streamlit UI here if st is None
-        raise Exception("No MongoDB connection string found. Set MONGODB_URI in env or Streamlit secrets.")
+        # No connection string found: return None so callers can continue without DB
+        return None
 
     # Connect to MongoDB
     client = MongoClient(mongodb_uri)
     # Test the connection
     client.admin.command("ping")
     return client
+
+
+class InMemoryCollection:
+    def __init__(self):
+        self._data = []
+
+    def insert_many(self, records):
+        self._data.extend(records)
+        return {'inserted_count': len(records)}
+
+    def find(self):
+        for r in self._data:
+            yield r
+
+
+class InMemoryDatabase:
+    def __init__(self):
+        self._collections = {}
+
+    def __getitem__(self, name):
+        if name not in self._collections:
+            self._collections[name] = InMemoryCollection()
+        return self._collections[name]
+
+
+class InMemoryClient:
+    def __init__(self):
+        self._databases = {}
+        self.admin = self.Admin()
+
+    class Admin:
+        @staticmethod
+        def command(x):
+            # simulate ping response
+            return {'ok': 1}
+
+    def __getitem__(self, name):
+        if name not in self._databases:
+            self._databases[name] = InMemoryDatabase()
+        return self._databases[name]
+
 
 
 class MongoDBClient:
@@ -67,17 +108,29 @@ class MongoDBClient:
 
     def __init__(self, database_name: str = None, mongodb_uri: str = None):
         # Allow passing a URI directly or rely on env/secrets
+        self.is_in_memory = False
         if mongodb_uri:
+            # explicit uri provided: create client and test
             self.client = MongoClient(mongodb_uri)
+            # test connection
+            self.client.admin.command("ping")
         else:
-            self.client = get_mongodb_connection()
+            conn = get_mongodb_connection()
+            if conn is None:
+                # no uri provided and no secrets: use in-memory fallback
+                self.client = InMemoryClient()
+                self.is_in_memory = True
+            else:
+                self.client = conn
 
-        if database_name:
+        if database_name and self.client is not None:
             self.database = self.client[database_name]
         else:
             self.database = None
 
     def __getitem__(self, item):
+        if self.client is None:
+            raise RuntimeError("MongoDB client is not configured")
         return self.client[item]
 
     def close(self):
