@@ -1,0 +1,53 @@
+name: CI - Build and Smoke Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub (optional)
+        if: false
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t livesensor-ml:ci .
+
+      - name: Run container
+        run: |
+          docker run -d --name livesensor-ml-ci -e MONGODB_URI="mongodb://invalid:27017" -p 8080:8080 livesensor-ml:ci || true
+          # wait for server
+          for i in {1..20}; do
+            if curl -sS http://127.0.0.1:8080/health | grep -q 'model'; then
+              echo 'Service is up'; break
+            fi
+            sleep 1
+          done
+
+      - name: Run smoke test
+        run: |
+          set -e
+          http_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/health || true)
+          echo "health status: $http_status"
+          if [ "$http_status" != "200" ]; then
+            docker logs livesensor-ml-ci || true
+            exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f livesensor-ml-ci || true

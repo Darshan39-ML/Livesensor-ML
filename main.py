@@ -1,34 +1,21 @@
-from sensor.configuration.mongo_db_connection import get_mongodb_connection
-from sensor.exception import SensorException
-import os , sys
-from sensor.logger import logging
-
-
-from sensor.pipeline.training_pipeline import TrainPipeline
-from sensor.utils.main_utils import load_object
-from sensor.ml.model.estimator import ModelResolver,TargetValueMapping
-from sensor.configuration.mongo_db_connection import get_mongodb_connection
-from sensor.exception import SensorException
-import os,sys
-from sensor.logger import logging
-from sensor.pipeline import training_pipeline
-from sensor.pipeline.training_pipeline import TrainPipeline
 import os
-from sensor.utils.main_utils import read_yaml_file
-from sensor.constant.training_pipeline import SAVED_MODEL_DIR
+import sys
+from typing import Optional
 
-
-from  fastapi import FastAPI
-from sensor.constant.application import APP_HOST, APP_PORT
-from starlette.responses import RedirectResponse
-from uvicorn import run as app_run
-from fastapi.responses import Response
-from sensor.ml.model.estimator import ModelResolver,TargetValueMapping
-from sensor.utils.main_utils import load_object
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import Response, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-import os
-from fastapi import FastAPI, File, UploadFile, Response
+from uvicorn import run as app_run
+
+from sensor.logger import logging
+from sensor.exception import SensorException
+from sensor.pipeline.training_pipeline import TrainPipeline
+from sensor.utils.main_utils import load_object
+from sensor.ml.model.estimator import ModelResolver, TargetValueMapping
+from sensor.constant.training_pipeline import SAVED_MODEL_DIR
+from sensor.constant.application import APP_HOST, APP_PORT
 import pandas as pd
+from sensor.configuration.mongo_db_connection import MongoDBClient, get_mongodb_connection
 
 
 app = FastAPI()
@@ -57,46 +44,82 @@ async def  index():
 @app.get("/train")
 async def train():
     try:
-
         training_pipeline = TrainPipeline()
 
         if training_pipeline.is_pipeline_running:
-            return Response("Training pipeline is already running.")
-        
+            return Response(content="Training pipeline is already running.", media_type="text/plain")
+
         training_pipeline.run_pipeline()
-        return Response("Training successfully completed!")
+        return Response(content="Training successfully completed!", media_type="text/plain")
     except Exception as e:
-        return Response(f"Error Occurred! {e}")
+        logging.exception("Error while running training pipeline")
+        return Response(content=f"Error Occurred! {e}", media_type="text/plain", status_code=500)
         
 
 
 
 
-@app.get("/predict")
-async def predict():
+@app.post("/predict")
+async def predict(file: Optional[UploadFile] = None):
+    """Predict endpoint accepts an uploaded CSV file or uses a default empty dataset placeholder.
+    Returns predictions as CSV text.
+    """
     try:
+        # load input dataframe
+        if file is not None:
+            contents = await file.read()
+            df = pd.read_csv(pd.io.common.BytesIO(contents))
+        else:
+            return Response(content="No input file provided", media_type="text/plain", status_code=400)
 
-    # get data and from the csv file 
-    # covert it into dataframe 
+        model_resolver = ModelResolver(model_dir=SAVED_MODEL_DIR)
+        if not model_resolver.is_model_exists():
+            return Response(content="Model is not available", media_type="text/plain", status_code=404)
 
-        df =None
+        best_model_path = model_resolver.get_best_model_path()
+        model = load_object(file_path=best_model_path)
 
-        Model_resolver = ModelResolver(model_dir=SAVED_MODEL_DIR)
-        if not Model_resolver.is_model_exists():
-            return Response("Model is not available")
-        
-        best_model_path = Model_resolver.get_best_model_path()
-        model= load_object(file_path=best_model_path)
-        y_pred=model.predict(df)
+        # If model is wrapped (SensorModel) it expects preprocessor inside; otherwise, handle directly
+        try:
+            y_pred = model.predict(df)
+        except Exception:
+            # Try to use predict on dataframe values
+            y_pred = model.predict(df.values)
+
         df['predicted_column'] = y_pred
-        df['predicted_column'].replace(TargetValueMapping().reverse_mapping,inplace=True)
+        df['predicted_column'] = df['predicted_column'].replace(TargetValueMapping().reverse_mapping())
+
+        csv_bytes = df.to_csv(index=False).encode()
+        return Response(content=csv_bytes, media_type='text/csv')
+    except SensorException as se:
+        logging.exception("SensorException in predict")
+        return Response(content=str(se), media_type="text/plain", status_code=500)
+    except Exception as e:
+        logging.exception("Exception in predict")
+        return Response(content=str(e), media_type="text/plain", status_code=500)
 
 
-        # get the prediction output as you wnat 
 
+@app.get("/health")
+async def health():
+    """Simple health check that verifies model availability and DB connectivity."""
+    status = {"model": "unknown", "mongodb": "unknown"}
+    try:
+        model_resolver = ModelResolver(model_dir=SAVED_MODEL_DIR)
+        status["model"] = "available" if model_resolver.is_model_exists() else "missing"
+    except Exception as e:
+        status["model"] = f"error: {e}"
+    try:
+        # try a quick MongoDB ping via the wrapper
+        client = MongoDBClient()
+        # will raise if cannot connect
+        client.client.admin.command("ping")
+        status["mongodb"] = "ok"
+        client.close()
+    except Exception as e:
+        status["mongodb"] = f"error: {e}"
 
-    except  Exception as e:
-        raise  SensorException(e,sys)
+    return status
 
 
 
@@ -119,7 +142,7 @@ if __name__ == "__main__":
     # database_name="ineuron"
     # collection_name ="sensor"
     # dump_csv_file_to_mongodb_collection(file_path,database_name,collection_name)
-    app_run(app ,host=APP_HOST,port=APP_PORT)
+    app_run(app, host=APP_HOST, port=APP_PORT)
 
 
 
