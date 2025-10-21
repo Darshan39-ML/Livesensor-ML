@@ -40,4 +40,32 @@ Notes
 - For local dev, prefer using `MONGODB_URI` env var. Streamlit secrets are supported as a fallback but are optional.
 - If you want to use the Streamlit app (older behavior), run `streamlit run main.py` but avoid port conflicts (8080). The project previously used Streamlit and the devcontainer runs streamlit by default; change the devcontainer settings if necessary.
 
+Streamlit
+---------
+
+This repository now includes a lightweight Streamlit demo UI at `streamlit_app.py` for interactive prediction and quick testing.
+
+Two deployment options:
+
+1) FastAPI backend (default): keep `main.py` as the API server and use `streamlit_app.py` locally as a client UI (it loads the model from disk directly).
+
+2) Streamlit-only: run `streamlit run streamlit_app.py` to launch a single-process UI that loads the trained model from `SAVED_MODEL_DIR`.
+
+Run locally (Streamlit):
+
+```bash
+# Create and activate a virtualenv, install dependencies from requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Start the Streamlit demo
+streamlit run streamlit_app.py --server.enableCORS false --server.enableXsrfProtection false
+```
+
+Secrets and MongoDB
+--------------------
+
+If you want the app to use MongoDB, set `MONGODB_URI` in your environment or add it to Streamlit secrets (see `.streamlit/secrets.toml.example`). Without a MongoDB URI the app will fall back to an in-memory store for local development.
+
 If you'd like, I can add a Dockerfile, unit tests, or CI setup next.
