@@ -68,4 +68,34 @@ Secrets and MongoDB
 
 If you want the app to use MongoDB, set `MONGODB_URI` in your environment or add it to Streamlit secrets (see `.streamlit/secrets.toml.example`). Without a MongoDB URI the app will fall back to an in-memory store for local development.
 
+Docker quickstart (easy & fast)
+--------------------------------
+
+If you have Docker installed, you can build and run the full stack (API + MongoDB) quickly with Docker Compose.
+
+Build and start the stack:
+
+```bash
+docker compose up --build -d
+```
+
+Check logs for the API service:
+
+```bash
+docker compose logs -f api
+```
+
+Stop the stack:
+
+```bash
+docker compose down
+```
+
+Then verify the health endpoint:
+
+```bash
+curl http://localhost:8080/health
+```
+
+
 If you'd like, I can add a Dockerfile, unit tests, or CI setup next.
