@@ -63,6 +63,17 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py --server.enableCORS false --server.enableXsrfProtection false
 ```
 
+Streamlit Cloud / Heroku deployment
+-----------------------------------
+
+For Streamlit Cloud or Heroku-like platforms, add a `Procfile` at the repository root with the following content:
+
+```
+web: streamlit run streamlit_app.py --server.port $PORT --server.enableCORS false
+```
+
+Provide your `MONGODB_URI` via Streamlit secrets (`.streamlit/secrets.toml`) or as an environment variable in the deployment platform. An example template is provided in `.streamlit/secrets.toml.example`.
+
 Secrets and MongoDB
 --------------------
 
