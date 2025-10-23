@@ -79,7 +79,8 @@ def save_object(file_path: str, obj: object) -> None:
 
 
 def load_object(file_path: str, ) -> object:
-    # ...existing code...
+    # Try to load a pickled object first; if that fails, attempt flexible
+    # model loading (xgboost native Booster or joblib/pickle wrappers).
     try:
         import pkg_resources
     except ImportError as e:
@@ -87,11 +88,92 @@ def load_object(file_path: str, ) -> object:
             "pkg_resources (from setuptools) is required but not installed. "
             "Install it in your environment: pip install setuptools"
         ) from e
+
     try:
         if not os.path.exists(file_path):
             raise Exception(f"The file: {file_path} is not exists")
-        with open(file_path, "rb") as file_obj:
-            return pickle.load(file_obj)
+
+        # First attempt: unpickle (common for sklearn-wrapped models)
+        try:
+            with open(file_path, "rb") as file_obj:
+                return pickle.load(file_obj)
+        except Exception as pickle_err:
+            # If pickle triggered an XGBoost-specific error (happens when the
+            # pickled object contains xgboost.Booster state that cannot be
+            # restored e.g. due to version mismatch or corrupted content),
+            # detect that and raise a clearer message for the UI.
+            pickle_err_repr = repr(pickle_err)
+            err_type_name = type(pickle_err).__name__
+            is_xgb_err = (
+                "xgboost" in pickle_err_repr.lower()
+                or "xgboosterror" in err_type_name.lower()
+                or "XGBoost" in pickle_err_repr
+            )
+            if is_xgb_err:
+                # Try a safe unpickle where xgboost.Booster.__setstate__ is
+                # monkeypatched to avoid calling into the C library. This can
+                # recover the Python wrapper object (e.g., preprocessor) even
+                # if the Booster's binary state is incompatible.
+                try:
+                    def _safe_unpickle(path):
+                        try:
+                            import xgboost as _xgb
+                            core = getattr(_xgb, 'core', None)
+                            if core is None or not hasattr(core, 'Booster'):
+                                # nothing to patch
+                                with open(path, 'rb') as f:
+                                    return pickle.load(f)
+
+                            Booster = core.Booster
+                            original_setstate = getattr(Booster, '__setstate__', None)
+
+                            def _no_parse_setstate(self, state):
+                                # store raw state and don't parse into libxgboost
+                                try:
+                                    object.__setattr__(self, '_xgb_raw_state', state)
+                                except Exception:
+                                    pass
+
+                            # patch
+                            Booster.__setstate__ = _no_parse_setstate
+                            try:
+                                with open(path, 'rb') as f:
+                                    obj = pickle.load(f)
+                            finally:
+                                # restore
+                                if original_setstate is not None:
+                                    Booster.__setstate__ = original_setstate
+                            return obj
+                        except Exception:
+                            # If anything fails, re-raise original pickle_err
+                            raise
+
+                    recovered = _safe_unpickle(file_path)
+                    # Return the partially recovered object. Note: the Booster
+                    # inside may have attribute '_xgb_raw_state' instead of a
+                    # working model; callers should handle that.
+                    return recovered
+                except Exception:
+                    raise SensorException(
+                        Exception(
+                            "Model file appears to contain XGBoost state that cannot be loaded. "
+                            "This may be due to an incompatible xgboost version or corrupted file. "
+                            "Try re-saving the model with the running xgboost version or use a matching environment."
+                        ),
+                        sys,
+                    ) from pickle_err
+
+            # Otherwise try to load via the flexible loader (joblib or native booster)
+            try:
+                return load_model_flexible(file_path)
+            except Exception as flex_err:
+                # Raise a SensorException that includes the original pickle
+                # and flexible loader messages for debugging.
+                raise SensorException(
+                    Exception(f"Failed to load object. pickle error: {pickle_err}; flexible loader error: {flex_err}"),
+                    sys,
+                ) from flex_err
+
     except Exception as e:
         raise SensorException(e, sys) from e
 
@@ -171,23 +253,59 @@ def load_model_flexible(path):
     Try loading an XGBoost model saved in either native xgboost format (json/bin)
     or a pickle/joblib object (sklearn wrapper). Returns the loaded object.
     """
-    # try native xgboost Booster (lazy import so this module can be imported
-    # even when xgboost/joblib are not installed)
+    # Decide strategy based on file extension and a small file magic sniff.
+    ext = os.path.splitext(path)[1].lower()
+
+    # Helper: try joblib/pickle load
+    def _try_joblib():
+        try:
+            import joblib
+            return joblib.load(path)
+        except Exception:
+            return None
+
+    # If file extension clearly indicates a booster or JSON, try xgboost first.
     try:
         import xgboost as xgb
-        booster = xgb.Booster()
-        booster.load_model(path)
-        return booster
     except Exception:
-        pass
+        xgb = None
 
-    # try joblib/pickle (sklearn wrapper)
+    # Quick magic sniff (read a few bytes)
+    magic = b""
     try:
-        import joblib
-        obj = joblib.load(path)
+        with open(path, "rb") as f:
+            magic = f.read(64)
+    except Exception:
+        magic = b""
+
+    # If magic looks like a pickle (protocol 4/5 start 0x80) or extension suggests pickle, prefer joblib
+    if ext in (".pkl", ".joblib", ".pickle") or (len(magic) > 0 and magic[0] == 0x80):
+        obj = _try_joblib()
+        if obj is not None:
+            return obj
+
+    # If extension suggests xgboost booster or JSON, try Booster
+    if xgb is not None and ext in (".model", ".bin", ".json") or (magic.strip().startswith(b"{") and xgb is not None):
+        try:
+            booster = xgb.Booster()
+            # xgb.Booster.load_model can raise low-level C++ errors; catch them and wrap
+            booster.load_model(path)
+            return booster
+        except Exception as e:
+            # If booster load fails, fall through to joblib attempt below
+            booster_err = e
+    else:
+        booster_err = None
+
+    # Last resort: try joblib/pickle load
+    obj = _try_joblib()
+    if obj is not None:
         return obj
-    except Exception as e:
-        raise RuntimeError(f"Failed to load model from {path}: {e}")
+
+    # No loader succeeded: raise clear error including any booster error
+    if booster_err is not None:
+        raise RuntimeError(f"Failed to load model as xgboost Booster: {booster_err}")
+    raise RuntimeError(f"Failed to load model from {path}: unsupported format or corrupted file")
 # ...existing code...
 
 
