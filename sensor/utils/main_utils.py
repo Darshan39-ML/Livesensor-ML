@@ -79,6 +79,14 @@ def save_object(file_path: str, obj: object) -> None:
 
 
 def load_object(file_path: str, ) -> object:
+    # ...existing code...
+    try:
+        import pkg_resources
+    except ImportError as e:
+        raise RuntimeError(
+            "pkg_resources (from setuptools) is required but not installed. "
+            "Install it in your environment: pip install setuptools"
+        ) from e
     try:
         if not os.path.exists(file_path):
             raise Exception(f"The file: {file_path} is not exists")
