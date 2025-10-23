@@ -79,6 +79,39 @@ async def predict(file: Optional[UploadFile] = None):
         best_model_path = model_resolver.get_best_model_path()
         model = load_object(file_path=best_model_path)
 
+        # Align dataframe columns to the model's expected features (add missing, drop extra, reorder)
+        try:
+            pre = getattr(model, 'preprocessor', None)
+            expected = None
+            if pre is not None and hasattr(pre, 'feature_names_in_'):
+                expected = list(pre.feature_names_in_)
+            else:
+                if pre is not None and hasattr(pre, 'named_steps'):
+                    for step in pre.named_steps.values():
+                        if hasattr(step, 'feature_names_in_'):
+                            expected = list(step.feature_names_in_)
+                            break
+        except Exception:
+            expected = None
+
+        if expected is not None:
+            missing = [c for c in expected if c not in df.columns]
+            extra = [c for c in df.columns if c not in expected]
+            if missing:
+                for c in missing:
+                    df[c] = pd.NA
+            if extra:
+                df = df.drop(columns=extra)
+            df = df[expected]
+            # replace pandas NA with numpy nan and coerce numeric columns
+            import numpy as _np
+            df = df.replace({pd.NA: _np.nan})
+            for _c in df.columns:
+                try:
+                    df[_c] = pd.to_numeric(df[_c], errors='coerce')
+                except Exception:
+                    pass
+
         # If model is wrapped (SensorModel) it expects preprocessor inside; otherwise, handle directly
         try:
             y_pred = model.predict(df)
@@ -88,9 +121,48 @@ async def predict(file: Optional[UploadFile] = None):
 
         df['predicted_column'] = y_pred
         df['predicted_column'] = df['predicted_column'].replace(TargetValueMapping().reverse_mapping())
+        # compute confidence/probability if possible
+        confidence = None
+        try:
+            est = getattr(model, 'model', model)
+            if hasattr(model, 'predict_proba'):
+                proba = model.predict_proba(df)
+            elif hasattr(est, 'predict_proba'):
+                pre = getattr(model, 'preprocessor', None)
+                X_for_proba = df
+                if pre is not None:
+                    X_for_proba = pre.transform(df)
+                proba = est.predict_proba(X_for_proba)
+            else:
+                proba = None
+
+            if proba is not None:
+                import numpy as _np
+                confidence = _np.max(proba, axis=1)
+                df['prediction_confidence_score'] = confidence
+                df['prediction_confidence'] = [f"{(s*100):.1f}%" for s in confidence]
+        except Exception:
+            pass
 
         csv_bytes = df.to_csv(index=False).encode()
-        return Response(content=csv_bytes, media_type='text/csv')
+
+        # prepare overall summary headers: percentage per predicted class and average confidence
+        headers = {}
+        try:
+            # value counts normalized
+            counts = df['predicted_column'].value_counts(normalize=True)
+            for label, frac in counts.items():
+                safe_label = str(label).replace(' ', '_')
+                headers[f"X-Predicted-Percent-{safe_label}"] = f"{(frac*100):.1f}%"
+
+            if 'prediction_confidence_score' in df.columns:
+                avg_conf = float(df['prediction_confidence_score'].mean())
+                headers['X-Average-Confidence-Score'] = f"{avg_conf:.4f}"
+                headers['X-Average-Confidence'] = f"{(avg_conf*100):.1f}%"
+        except Exception:
+            headers = {}
+
+        return Response(content=csv_bytes, media_type='text/csv', headers=headers)
     except SensorException as se:
         logging.exception("SensorException in predict")
         return Response(content=str(se), media_type="text/plain", status_code=500)

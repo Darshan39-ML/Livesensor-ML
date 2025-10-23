@@ -1,0 +1,12 @@
+[server]
+# Development-only: disable XSRF protection to allow uploads via remote proxy (e.g. Codespaces / editor preview).
+# WARNING: disabling XSRF protection reduces security. Do NOT use this setting in production.
+enableXsrfProtection = false
+
+# Allow cross-origin requests from the preview/proxy. You can set this to 'false' if
+# you only access Streamlit directly at the same origin.
+enableCORS = false
+
+# Run headless in container/dev
+headless = true
+port = 8501
