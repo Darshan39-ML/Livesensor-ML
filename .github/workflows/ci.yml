@@ -2,27 +2,27 @@ name: CI - Build and Smoke Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-        - name: Set up Python
-          uses: actions/setup-python@v4
-          with:
-            python-version: '3.11'
-          
-        - name: Install Python dependencies and run tests
-          run: |
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-            # Ensure tests run from repo root
-            PYTHONPATH=. pytest -q
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install Python dependencies and run tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Ensure tests run from repo root
+          PYTHONPATH=. pytest -q
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -40,10 +40,10 @@ jobs:
 
       - name: Run container
         run: |
-          docker run -d --name livesensor-ml-ci -e MONGODB_URI="mongodb://invalid:27017" -p 8080:8080 livesensor-ml:ci || true
+          docker run -d --name livesensor-ml-ci -e MONGODB_URI="mongodb://invalid:27017" -p 8501:8501 livesensor-ml:ci || true
           # wait for server
           for i in {1..20}; do
-            if curl -sS http://127.0.0.1:8080/health | grep -q 'model'; then
+            if curl -sS http://127.0.0.1:8501/_stcore/health | grep -q 'ok'; then
               echo 'Service is up'; break
             fi
             sleep 1
@@ -52,7 +52,7 @@ jobs:
       - name: Run smoke test
         run: |
           set -e
-          http_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/health || true)
+          http_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8501/_stcore/health || true)
           echo "health status: $http_status"
           if [ "$http_status" != "200" ]; then
             docker logs livesensor-ml-ci || true
@@ -81,7 +81,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
@@ -91,10 +91,10 @@ jobs:
       - name: Start app pointing at MongoDB service
         run: |
           export MONGODB_URI="mongodb://localhost:27017"
-          nohup python3 main.py &
+          nohup streamlit run streamlit_app.py --server.port 8501 --server.address 0.0.0.0 &
           # wait for app to come up
           for i in {1..30}; do
-            if curl -sS http://127.0.0.1:8080/health | grep -q 'mongodb'; then
+            if curl -sS http://127.0.0.1:8501/_stcore/health | grep -q 'ok'; then
               echo 'app is up'; break
             fi
             sleep 1
@@ -102,7 +102,7 @@ jobs:
 
       - name: Integration smoke test
         run: |
-          http_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/health || true)
+          http_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8501/_stcore/health || true)
           echo "health status: $http_status"
           if [ "$http_status" != "200" ]; then
             cat /tmp/app.log || true
@@ -112,4 +112,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          pkill -f main.py || true
+          pkill -f streamlit || true

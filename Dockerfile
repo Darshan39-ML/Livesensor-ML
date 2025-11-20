@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -18,16 +18,19 @@ RUN pip install --upgrade pip \
 # Copy project files
 COPY . /app
 
+# Install the local package
+RUN pip install .
+
 # Create non-root user to run the app
 RUN useradd --create-home appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Expose the application port
-EXPOSE 8080
+EXPOSE 8501
 
-# Healthcheck endpoint for docker
+# Healthcheck endpoint for docker (Streamlit specific)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
 
-# Run with production-friendly uvicorn options
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--loop", "uvloop", "--http", "httptools"]
+# Run Streamlit
+CMD ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]

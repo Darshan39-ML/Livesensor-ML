@@ -4,4 +4,4 @@ set -euo pipefail
 if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
-python3 main.py
+streamlit run streamlit_app.py
